@@ -6,7 +6,6 @@ class Agent:
 		self.values = values
 		self.rate = self.sphere_function()
 		self.encoding_values = []
-		print(values)
 
 
 	def sphere_function(self):
