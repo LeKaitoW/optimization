@@ -1,4 +1,5 @@
 import random
+import matplotlib.pyplot as plot
 from agent import Agent
 
 N = 2 #2, 4, 8, 16, 32
@@ -9,6 +10,8 @@ function = "sphere"
 
 population = []
 intermediate_population = []
+best_rates = []
+iterations = []
 random.seed(123)
 
 def init_population(population, population_size, max, precision):
@@ -53,9 +56,7 @@ def arithmetical_crossing(parents, population):
 		rates.update({parent.rate : parent})
 	rates.update({new_first_agent.rate : new_first_agent})
 	rates.update({new_second_agent.rate : new_second_agent})
-	keys = sorted(rates.keys())
-	population.append(rates.get(keys[0]))
-	population.append(rates.get(keys[1]))
+	population = pick_best(rates, population, 2)
 	return population
 
 
@@ -70,10 +71,15 @@ def mutation_Michalewicz(agent, counter, population):
 	for value in agent.values:
 		x_new.append(round(value+u_first*delta, precision))
 	new_agent = Agent(function, x_new)
-	if new_agent.rate<agent.rate:
-		population.append(new_agent)
-	else:
-		population.append(agent)
+	rates = {new_agent.rate:new_agent, agent.rate:agent}
+	population = pick_best(rates, population, 1)
+	return population
+
+
+def pick_best(rates, population, number):
+	keys = sorted(rates.keys())
+	for i in range(number):
+		population.append(rates.get(keys[i]))
 	return population
 
 
@@ -85,11 +91,15 @@ def can_stop(population):
 	return False
 
 		
-def find_best(population):
+def find_best(population, iteration):
 	rates = []
 	for agent in population:
 		rates.append(agent.rate)
-	print('best=', min(rates))
+	best = min(rates)
+	print('best=', best)
+	best_rates.append(best)
+	iterations.append(iteration)
+	return(best)
 
 
 population = init_population(population, population_size, 10, precision)
@@ -106,8 +116,12 @@ while ((not can_stop(population)) and (counter < max_counter)):
 		intermediate_population = mutation_Michalewicz(population[j],
 		counter, intermediate_population)
 	population = intermediate_population[:]
-	find_best(population)
+	find_best(population, counter)
 	del intermediate_population[:]
 	counter+=1
 
 print(len(population))
+plot.plot(iterations, best_rates)
+plot.xlabel('iterations')
+plot.ylabel('best value')
+plot.show()
