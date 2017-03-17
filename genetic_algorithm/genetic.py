@@ -2,19 +2,6 @@ import random
 import matplotlib.pyplot as plot
 from agent import Agent
 
-N = 2  # 2, 4, 8, 16, 32
-population_size = 20
-precision = 4
-max_counter = 1000
-function = "sphere"
-
-current_population = []
-intermediate_population = []
-best_rates = []
-iterations = []
-# random.seed(83392)
-
-
 def init_population(population, size, maximum, accuracy):
     for m in range(size):
         values = []
@@ -87,11 +74,13 @@ def pick_best(rates, population, number):
     return population
 
 
-def can_stop(population):
-    for agent in population:
-        if agent.rate < 0.5:
-            print(agent.values)
-            return True
+def stagnation(best_values, iteration):
+    i = 0
+    for j in range(iteration-1):
+        if abs(best_values[iteration-j]-best_values[iteration-j-1])<stagnation_value:
+            i+=1
+            if i == stagnation_iterations:
+                return True
     return False
 
 
@@ -100,31 +89,41 @@ def find_best(population, iteration):
     for agent in population:
         rates.append(agent.rate)
     best = min(rates)
-    print('best=', best)
     best_rates.append(best)
     iterations.append(iteration)
     return best
 
 
+N = 2  # 2, 4, 8, 16, 32
+population_size = 20
+precision = 4
+max_counter = 1000
+function = "sphere"
+stagnation_value = 0.05
+stagnation_iterations = 10
+
+current_population = []
+intermediate_population = []
+best_rates = []
+iterations = []
+# random.seed(83392)
+
 current_population = init_population(current_population, population_size, 10, precision)
 
 counter = 1
 
-while (not can_stop(current_population)) and (counter < max_counter):
-    # while counter < 10:
-    print('it = ', counter)
+while (not stagnation(best_rates, counter-2)) and (counter < max_counter):
     for i in range(population_size // 20):
-        intermediate_population = arithmetical_crossing(selection(current_population),
-                                                        intermediate_population)
+        intermediate_population = arithmetical_crossing(selection(current_population), intermediate_population)
     for j in range(len(current_population)):
-        intermediate_population = mutation_michalewicz(current_population[j],
-                                                       counter, intermediate_population)
+        intermediate_population = mutation_michalewicz(current_population[j], counter, intermediate_population)
         current_population = intermediate_population[:]
     find_best(current_population, counter)
     del intermediate_population[:]
     counter += 1
 
-print(len(current_population))
+print(best_rates[counter-2])
+
 plot.plot(iterations, best_rates)
 plot.xlabel('iterations')
 plot.ylabel('best value')
