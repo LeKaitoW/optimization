@@ -12,7 +12,7 @@ current_population = []
 intermediate_population = []
 best_rates = []
 iterations = []
-# random.seed(123)
+# random.seed(83392)
 
 
 def init_population(population, size, maximum, accuracy):
@@ -80,13 +80,16 @@ def mutation_michalewicz(agent, iteration, population):
 def pick_best(rates, population, number):
     keys = sorted(rates.keys())
     for k in range(number):
-        population.append(rates.get(keys[k]))
+        if number < len(keys):
+            population.append(rates.get(keys[k]))
+        else:
+            population.append(rates.get(keys[0]))
     return population
 
 
 def can_stop(population):
     for agent in population:
-        if agent.rate < 0.005:
+        if agent.rate < 0.5:
             print(agent.values)
             return True
     return False
