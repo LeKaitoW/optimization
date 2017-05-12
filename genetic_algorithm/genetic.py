@@ -2,11 +2,29 @@ import random
 import matplotlib.pyplot as plot
 from agent import Agent
 
+
+N = 2  # 2, 4, 8, 16, 32
+population_size = 100
+precision = 4
+max_counter = 1000
+function = 'Rastr'#'Rozen'#'sphere'#'Rastr'
+stagnation_value = 1 / pow(10, precision)
+stagnation_iterations = 50
+
+current_population = []
+intermediate_population = []
+best_rates = []
+iterations = []
+#random.seed(83392)
+
+counter = 1
+
+
 def init_population(population, size, maximum, accuracy):
     for m in range(size):
         values = []
         for x in range(N):
-            values.append(round(random.random()*maximum, accuracy))
+            values.append(round(random.random() * 2*maximum, accuracy) - maximum)
         population.append(Agent(function, values))
     return population
 
@@ -50,14 +68,14 @@ def arithmetical_crossing(parents, population):
 
 def mutation_michalewicz(agent, iteration, population):
     b = 5
-    interval = 0.2
+    interval = 0.1
     seq = [1, -1]
-    u_first = random.choice(seq)
+    sign = random.choice(seq)
     r = random.random()
     delta = interval / 2 * (1 - pow(r, (pow(1 - (iteration / max_counter), b))))
     x_new = []
     for value in agent.values:
-        x_new.append(round(value + u_first * delta, precision))
+        x_new.append(round(value + sign * delta, precision))
     new_agent = Agent(function, x_new)
     rates = {new_agent.rate: new_agent, agent.rate: agent}
     population = pick_best(rates, population, 1)
@@ -76,9 +94,9 @@ def pick_best(rates, population, number):
 
 def stagnation(best_values, iteration):
     i = 0
-    for j in range(iteration-1):
-        if abs(best_values[iteration-j]-best_values[iteration-j-1])<stagnation_value:
-            i+=1
+    for j in range(iteration - 1):
+        if abs(best_values[iteration - j] - best_values[iteration - j - 1]) < stagnation_value:
+            i += 1
             if i == stagnation_iterations:
                 return True
     return False
@@ -94,37 +112,42 @@ def find_best(population, iteration):
     return best
 
 
-N = 2  # 2, 4, 8, 16, 32
-population_size = 20
-precision = 4
-max_counter = 1000
-function = "sphere"
-stagnation_value = 0.05
-stagnation_iterations = 10
+def make_points(population):
+    x = []
+    y = []
+    for agent in population:
+        x.append(agent.values[0])
+        y.append(agent.values[1])
+    return x, y
 
-current_population = []
-intermediate_population = []
-best_rates = []
-iterations = []
-# random.seed(83392)
 
-current_population = init_population(current_population, population_size, 10, precision)
+#graph_2.axis([-5, 5, -5, 5])
 
-counter = 1
 
-while (not stagnation(best_rates, counter-2)) and (counter < max_counter):
-    for i in range(population_size // 20):
+current_population = init_population(current_population, population_size, 5, precision)
+
+while (not stagnation(best_rates, counter - 2)) and (counter < max_counter):
+    for i in range(population_size//2):
         intermediate_population = arithmetical_crossing(selection(current_population), intermediate_population)
-    for j in range(len(current_population)):
-        intermediate_population = mutation_michalewicz(current_population[j], counter, intermediate_population)
-        current_population = intermediate_population[:]
+    for j in range(len(intermediate_population)):
+        intermediate_population = mutation_michalewicz(intermediate_population[j], counter, intermediate_population)
+    current_population = intermediate_population[:]
+    x, y = make_points(current_population)
+
     find_best(current_population, counter)
     del intermediate_population[:]
     counter += 1
 
-print(best_rates[counter-2])
+print(best_rates[counter - 2])
+for agent in current_population:
+    if agent.rate == best_rates[counter - 2]:
+        print(agent.values)
 
-plot.plot(iterations, best_rates)
-plot.xlabel('iterations')
-plot.ylabel('best value')
+
+figure_1 = plot.figure()
+graph_1 = figure_1.add_subplot(111)
+graph_1.plot(iterations, best_rates)
+plot.xlabel('x1')
+plot.ylabel('x2')
+
 plot.show()
