@@ -1,24 +1,19 @@
 import random
 import matplotlib.pyplot as plot
+import numpy
 from agent import Agent
 
 
-N = 2  # 2, 4, 8, 16, 32
+N = 32  # 2, 4, 8, 16, 32
 population_size = 100
-precision = 4
-max_counter = 1000
+precision = 5
+max_counter = 10000
 function = 'Rastr'#'Rozen'#'sphere'#'Rastr'
 stagnation_value = 1 / pow(10, precision)
-stagnation_iterations = 50
+stagnation_iterations = 100
+multistarts = 100
 
-current_population = []
-intermediate_population = []
-best_rates = []
-iterations = []
 #random.seed(83392)
-
-counter = 1
-
 
 def init_population(population, size, maximum, accuracy):
     for m in range(size):
@@ -68,11 +63,11 @@ def arithmetical_crossing(parents, population):
 
 def mutation_michalewicz(agent, iteration, population):
     b = 5
-    interval = 0.1
+    interval = 10
     seq = [1, -1]
     sign = random.choice(seq)
     r = random.random()
-    delta = interval / 2 * (1 - pow(r, (pow(1 - (iteration / max_counter), b))))
+    delta = (interval/iteration) / 2 * (1 - pow(r, (pow(1 - (iteration / max_counter), b))))
     x_new = []
     for value in agent.values:
         x_new.append(round(value + sign * delta, precision))
@@ -99,6 +94,8 @@ def stagnation(best_values, iteration):
             i += 1
             if i == stagnation_iterations:
                 return True
+        else:
+            i = 0
     return False
 
 
@@ -120,34 +117,71 @@ def make_points(population):
         y.append(agent.values[1])
     return x, y
 
+def check_x(population, current_x):
+    for agent in population:
+        for value in agent.values:
+            if abs(value) < abs(current_x):
+                current_x = abs(value)
+    return current_x
+
+
 
 #graph_2.axis([-5, 5, -5, 5])
 
 
-current_population = init_population(current_population, population_size, 5, precision)
+best_rates_sum = []
+best_x_sum = []
+counters = []
+tests = []
+tests.append(Agent.tests)
+for m in range(multistarts):
+    current_population = []
+    intermediate_population = []
+    best_rates = []
+    iterations = []
+    counter = 1
+    best_x = 1000
+    current_population = init_population(current_population, population_size, 5, precision)
+    while (not stagnation(best_rates, counter - 2)) and (counter < max_counter):
+        best_x = check_x(current_population, best_x)
+        for i in range(population_size//2):
+            intermediate_population = arithmetical_crossing(selection(current_population), intermediate_population)
+        for j in range(len(intermediate_population)):
+            intermediate_population = mutation_michalewicz(intermediate_population[j], counter, intermediate_population)
+        current_population = intermediate_population[:]
+        x, y = make_points(current_population)
+        find_best(current_population, counter)
+        del intermediate_population[:]
+        counter += 1
+    best_rates_sum.append(min(best_rates))
+    best_x_sum.append(best_x)
+    counters.append(counter-2)
+    tests.append(Agent.tests-tests[m])
+    print(m)
 
-while (not stagnation(best_rates, counter - 2)) and (counter < max_counter):
-    for i in range(population_size//2):
-        intermediate_population = arithmetical_crossing(selection(current_population), intermediate_population)
-    for j in range(len(intermediate_population)):
-        intermediate_population = mutation_michalewicz(intermediate_population[j], counter, intermediate_population)
-    current_population = intermediate_population[:]
-    x, y = make_points(current_population)
+print("all best", best_rates_sum)
+print("min", min(best_rates_sum))
+print("mean", numpy.mean(best_rates_sum))
+print("all best x", best_x_sum)
+print("min x", min(best_x_sum))
+print("mean x", numpy.mean(best_x_sum))
+print("mean t", numpy.mean(counters))
+print("tests", numpy.mean(tests[1:]))
+print("std", numpy.std(best_rates_sum))
+print("std tests", numpy.std(tests))
 
-    find_best(current_population, counter)
-    del intermediate_population[:]
-    counter += 1
-
-print(best_rates[counter - 2])
-for agent in current_population:
-    if agent.rate == best_rates[counter - 2]:
-        print(agent.values)
-
-
-figure_1 = plot.figure()
-graph_1 = figure_1.add_subplot(111)
-graph_1.plot(iterations, best_rates)
-plot.xlabel('x1')
-plot.ylabel('x2')
-
-plot.show()
+p = 0
+for best in best_rates_sum:
+    if abs(0-best)<0.01:
+        p+=1
+print("probability", p/len(best_rates_sum))
+#print(best_rates[counter - 2])
+#for agent in current_population:
+#    if agent.rate == best_rates[counter - 2]:
+#        print(agent.values)
+#figure_1 = plot.figure()
+#graph_1 = figure_1.add_subplot(111)
+#graph_1.plot(iterations, best_rates)
+#plot.xlabel('x1')
+#plot.ylabel('x2')
+#plot.show()
