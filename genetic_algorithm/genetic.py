@@ -4,7 +4,7 @@ import numpy
 from agent import Agent
 
 
-N = 32  # 2, 4, 8, 16, 32
+N = 16  # 2, 4, 8, 16, 32
 population_size = 100
 precision = 5
 max_counter = 10000
@@ -158,17 +158,20 @@ for m in range(multistarts):
     counters.append(counter-2)
     tests.append(Agent.tests-tests[m])
     print(m)
+    if m%5==0:
+        print("all best", best_rates_sum)
+        print("all best x", best_x_sum)
+        print("min", min(best_rates_sum))
+        print("mean", numpy.mean(best_rates_sum))
+        print("min x", min(best_x_sum))
+        print("mean x", numpy.mean(best_x_sum))
+        print("mean t", numpy.mean(counters))
+        print("tests", numpy.mean(tests[1:]))
+        print("std", numpy.std(best_rates_sum))
+        print("std tests", numpy.std(tests))
 
-print("all best", best_rates_sum)
-print("min", min(best_rates_sum))
-print("mean", numpy.mean(best_rates_sum))
-print("all best x", best_x_sum)
-print("min x", min(best_x_sum))
-print("mean x", numpy.mean(best_x_sum))
-print("mean t", numpy.mean(counters))
-print("tests", numpy.mean(tests[1:]))
-print("std", numpy.std(best_rates_sum))
-print("std tests", numpy.std(tests))
+
+
 
 p = 0
 for best in best_rates_sum:
